@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">StorageExamples</string>
+    <string name="storage_type_key">storage-type</string>
+    <string name="insert_url">Image url</string>
+    <string name="download">Download</string>
+    <string name="show_image">Load Image</string>
+    <string-array name="StorageSpinnerValues">
+        <item>Internal</item>
+        <item>External</item>
+        <item>Undefined</item>
+    </string-array>
+</resources>
