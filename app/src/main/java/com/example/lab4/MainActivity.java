@@ -22,6 +22,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     Random rand = null;
@@ -30,11 +34,17 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Main";
     private Integer progress = 0;
     private static final int TIMEOUT_MS = 100;
-    Button button;
-    TextView textView;
-    ListView listView;
-    ProgressBar progressBar;
+    private Button button;
+    private TextView textView;
+    private ListView listView;
+    private ProgressBar progressBar;
     private Handler handler;
+    // Sets the amount of time an idle thread waits before terminating
+    private static final int KEEP_ALIVE_TIME = 1;
+    private static int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+    private static final TimeUnit KEEP_ALIVE_TIME_UNIT = TimeUnit.SECONDS;
+    private BlockingQueue<Runnable> decodeWorkQueue;
+    private ThreadPoolExecutor decodeThreadPool;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
         listView.setAdapter(adapter);
         button = findViewById(R.id.button);
         progressBar = findViewById(R.id.progressBar);
+        decodeWorkQueue = new LinkedBlockingQueue<Runnable>();
         handler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message inputMessage) {
@@ -96,10 +107,18 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     };
-                    Thread thread = new Thread(runnable);
-                    thread.start();
+                    decodeWorkQueue.add(runnable);
+//                    Thread thread = new Thread(runnable);
+//                    thread.start();
                     iterator++;
                 }
+                decodeThreadPool = new ThreadPoolExecutor(
+                        NUMBER_OF_CORES,       // Initial pool size
+                        NUMBER_OF_CORES,       // Max pool size
+                        KEEP_ALIVE_TIME,
+                        KEEP_ALIVE_TIME_UNIT,
+                        decodeWorkQueue);
+                decodeThreadPool.prestartAllCoreThreads();
             }
         });
     }
